@@ -125,324 +125,343 @@ class ChatbotService:
     def __init__(self):
         """
         챗봇 서비스 초기화
-        
-        TODO: 다음 구성 요소들을 초기화하세요
-        
-        1. Config 로드
-           - config/chatbot_config.json 파일 읽기
-           - 챗봇 이름, 설명, 시스템 프롬프트 등
-        
-        2. OpenAI Client
-           - API 키: os.getenv("OPENAI_API_KEY")
-           - from openai import OpenAI
-           - self.client = OpenAI(api_key=...)
-        
-        3. ChromaDB
-           - 텍스트 임베딩 컬렉션 연결
-           - 경로: static/data/chatbot/chardb_embedding
-           - self.collection = ...
-        
-        4. LangChain Memory (선택)
-           - ConversationSummaryBufferMemory
-           - 대화 기록 관리
-           - self.memory = ...
-        
-        힌트:
-        - ChromaDB: import chromadb
-        - LangChain: from langchain.memory import ConversationSummaryBufferMemory
+
+        초기화 항목:
+        1. Config 로드 (chatbot_config.json)
+        2. OpenAI Client (임베딩용)
+        3. ChromaDB (벡터 검색용)
+        4. LangChain ChatOpenAI (응답 생성용)
+        5. 메모리 스토어 (대화 기록 관리)
         """
-        print("[ChatbotService] 초기화 중... ")
-        
-        # 여기에 초기화 코드 작성
-        self.config = {}
-        self.client = None
-        self.collection = None
-        self.memory = None
-        
-        print("[ChatbotService] 초기화 완료")
+        print("[ChatbotService] 초기화 중...")
+
+        # 1. Config 로드
+        self.config = self._load_config()
+        print(f"[ChatbotService] Config 로드 완료: {self.config.get('name', 'Unknown')}")
+
+        # 2. OpenAI Client 초기화 (임베딩용)
+        from openai import OpenAI
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY 환경변수가 설정되지 않았습니다.")
+        self.client = OpenAI(api_key=api_key)
+        print("[ChatbotService] OpenAI Client 초기화 완료")
+
+        # 3. ChromaDB 초기화
+        try:
+            self.collection = self._init_chromadb()
+            print(f"[ChatbotService] ChromaDB 연결 완료: {self.collection.count()} 문서")
+        except Exception as e:
+            print(f"[ChatbotService] ChromaDB 연결 실패: {e}")
+            print("[ChatbotService] RAG 검색 없이 계속 진행합니다.")
+            self.collection = None
+
+        # 4. LangChain ChatOpenAI 초기화 (응답 생성용)
+        from langchain_openai import ChatOpenAI
+        self.llm = ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.7,
+            max_tokens=500,
+            api_key=api_key
+        )
+        print("[ChatbotService] LangChain ChatOpenAI 초기화 완료")
+
+        # 5. 메모리 스토어 초기화 (세션별 대화 기록)
+        # 최신 LangChain 방식: InMemoryChatMessageHistory 사용
+        from langchain_core.chat_history import InMemoryChatMessageHistory
+        self.message_store = {}  # session_id -> InMemoryChatMessageHistory
+        print("[ChatbotService] 메모리 스토어 초기화 완료")
+
+        print("[ChatbotService] 초기화 완료 ✅\n")
     
     
     def _load_config(self):
         """
         설정 파일 로드
-        
-        TODO: config/chatbot_config.json 읽어서 반환
-        
-        반환값 예시:
-        {
-            "name": "김서강",
-            "character": {...},
-            "system_prompt": {...}
-        }
+
+        Returns:
+            dict: 챗봇 설정 정보
         """
-        pass
+        config_path = BASE_DIR / 'config' / 'chatbot_config.json'
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            return config
+        except FileNotFoundError:
+            print(f"[WARNING] 설정 파일을 찾을 수 없습니다: {config_path}")
+            # 기본 설정 반환
+            return {
+                'name': '챗봇',
+                'description': '챗봇 설명',
+                'tags': ['#챗봇'],
+                'character': {},
+                'system_prompt': {
+                    'base': '당신은 친근한 AI 어시스턴트입니다.',
+                    'rules': ['친절하게 대답하세요']
+                }
+            }
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] JSON 파싱 오류: {e}")
+            raise
     
     
     def _init_chromadb(self):
         """
         ChromaDB 초기화 및 컬렉션 반환
-        
-        TODO: 
-        1. PersistentClient 생성
-        2. 컬렉션 가져오기 (이름: "rag_collection")
-        3. 컬렉션 반환
-        
-        힌트:
-        - import chromadb
-        - db_path = BASE_DIR / "static/data/chatbot/chardb_embedding"
-        - client = chromadb.PersistentClient(path=str(db_path))
-        - collection = client.get_collection(name="rag_collection")
+
+        Returns:
+            chromadb.Collection: ChromaDB 컬렉션
+
+        Raises:
+            Exception: ChromaDB 연결 실패 시
         """
-        pass
+        import chromadb
+
+        db_path = BASE_DIR / "static" / "data" / "chatbot" / "chardb_embedding"
+
+        # 디렉토리가 없으면 생성
+        db_path.mkdir(parents=True, exist_ok=True)
+
+        # PersistentClient 생성
+        client = chromadb.PersistentClient(path=str(db_path))
+
+        # 컬렉션 가져오기 (없으면 생성)
+        try:
+            collection = client.get_collection(name="rag_collection")
+        except Exception:
+            # 컬렉션이 없으면 새로 생성
+            print("[ChromaDB] 'rag_collection' 컬렉션이 없어 새로 생성합니다.")
+            collection = client.create_collection(name="rag_collection")
+
+        return collection
     
     
     def _create_embedding(self, text: str) -> list:
         """
         텍스트를 임베딩 벡터로 변환
-        
+
         Args:
             text (str): 임베딩할 텍스트
-        
+
         Returns:
             list: 3072차원 벡터 (text-embedding-3-large 모델)
-        
-        TODO:
-        1. OpenAI API 호출
-        2. embeddings.create() 사용
-        3. 벡터 반환
-        
-        힌트:
-        - response = self.client.embeddings.create(
-        -     input=[text],
-        -     model="text-embedding-3-large"
-        - )
-        - return response.data[0].embedding
         """
-        pass
+        try:
+            response = self.client.embeddings.create(
+                input=[text],
+                model="text-embedding-3-large"
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            print(f"[ERROR] 임베딩 생성 실패: {e}")
+            raise
     
     
     def _search_similar(self, query: str, threshold: float = 0.45, top_k: int = 5):
         """
         RAG 검색: 유사한 문서 찾기 (핵심 메서드!)
-        
+
         Args:
             query (str): 검색 질의
             threshold (float): 유사도 임계값 (0.3-0.5 권장)
             top_k (int): 검색할 문서 개수
-        
+
         Returns:
             tuple: (document, similarity, metadata) 또는 (None, None, None)
-        
-        TODO: RAG 검색 알고리즘 구현
-        
-        1. 쿼리 임베딩 생성
-           query_embedding = self._create_embedding(query)
-        
-        2. ChromaDB 검색
-           results = self.collection.query(
-               query_embeddings=[query_embedding],
-               n_results=top_k,
-               include=["documents", "distances", "metadatas"]
-           )
-        
-        3. 유사도 계산 및 필터링
-           for doc, dist, meta in zip(...):
-               similarity = 1 / (1 + dist)  ← 유사도 공식!
-               if similarity >= threshold:
-                   ...
-        
-        4. 가장 유사한 문서 반환
-           return (best_document, best_similarity, metadata)
-        
-        
-        💡 핵심 개념:
-        
+
+        핵심 개념:
         - Distance vs Similarity
           · ChromaDB는 "거리(distance)"를 반환 (작을수록 유사)
           · 우리는 "유사도(similarity)"로 변환 (클수록 유사)
           · 변환 공식: similarity = 1 / (1 + distance)
-        
-        - Threshold
-          · 0.3: 매우 느슨한 매칭 (관련성 낮아도 OK)
-          · 0.45: 적당한 매칭 (추천!)
-          · 0.7: 매우 엄격한 매칭 (정확한 답만)
-        
-        - Top K
-          · 5-10개 정도 검색
-          · 그 중 threshold 넘는 것만 사용
-        
-        
-        🐛 디버깅 팁:
-        - print()로 검색 결과 확인
-        - 유사도 값 확인 (너무 낮으면 threshold 조정)
-        - 검색된 문서 내용 확인
         """
-        pass
+        # ChromaDB가 초기화되지 않은 경우
+        if self.collection is None:
+            return (None, None, None)
+
+        try:
+            # 1. 쿼리 임베딩 생성
+            query_embedding = self._create_embedding(query)
+
+            # 2. ChromaDB 검색
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k,
+                include=["documents", "distances", "metadatas"]
+            )
+
+            # 검색 결과가 없는 경우
+            if not results['documents'][0]:
+                print(f"[RAG] 검색 결과 없음")
+                return (None, None, None)
+
+            # 3. 유사도 계산 및 필터링
+            best_document = None
+            best_similarity = 0
+            best_metadata = None
+
+            documents = results['documents'][0]
+            distances = results['distances'][0]
+            metadatas = results['metadatas'][0]
+
+            for doc, dist, meta in zip(documents, distances, metadatas):
+                # 유사도 계산: similarity = 1 / (1 + distance)
+                similarity = 1 / (1 + dist)
+
+                # 디버깅 출력
+                print(f"[RAG] 문서: {doc[:50]}... | 거리: {dist:.4f} | 유사도: {similarity:.4f}")
+
+                # threshold 이상이고 현재까지 최고 유사도인 경우
+                if similarity >= threshold and similarity > best_similarity:
+                    best_similarity = similarity
+                    best_document = doc
+                    best_metadata = meta
+
+            # 4. 최적 문서 반환
+            if best_document:
+                print(f"[RAG] ✅ 선택된 문서 유사도: {best_similarity:.4f}")
+                return (best_document, best_similarity, best_metadata)
+            else:
+                print(f"[RAG] ❌ threshold({threshold}) 이상인 문서 없음")
+                return (None, None, None)
+
+        except Exception as e:
+            print(f"[ERROR] RAG 검색 실패: {e}")
+            return (None, None, None)
     
     
     def _build_prompt(self, user_message: str, context: str = None, username: str = "사용자"):
         """
         LLM 프롬프트 구성
-        
+
         Args:
             user_message (str): 사용자 메시지
             context (str): RAG 검색 결과 (선택)
             username (str): 사용자 이름
-        
+
         Returns:
-            str: 최종 프롬프트
-        
-        TODO:
-        1. 시스템 프롬프트 가져오기 (config에서)
-        2. RAG 컨텍스트 포함 여부 결정
-        3. 대화 기록 포함 (선택)
-        4. 최종 프롬프트 문자열 반환
-        
-        프롬프트 예시:
-        ```
-        당신은 서강대학교 선배 김서강입니다.
-        신입생들에게 학교 생활을 알려주는 역할을 합니다.
-        
-        [참고 정보]  ← RAG 컨텍스트가 있을 때만
-        학식은 곤자가가 맛있어. 돈까스가 인기야.
-        
-        사용자: 학식 추천해줘
-        ```
+            tuple: (system_prompt, user_prompt)
         """
-        pass
+        # 1. 시스템 프롬프트 구성
+        system_prompt_config = self.config.get('system_prompt', {})
+        base_prompt = system_prompt_config.get('base', '당신은 친근한 AI 어시스턴트입니다.')
+        rules = system_prompt_config.get('rules', [])
+
+        system_prompt = base_prompt
+        if rules:
+            system_prompt += "\n\n[대화 규칙]\n" + "\n".join(f"- {rule}" for rule in rules)
+
+        # 2. 사용자 프롬프트 구성
+        user_prompt = ""
+
+        # RAG 컨텍스트 추가
+        if context:
+            user_prompt += f"[참고 정보]\n{context}\n\n"
+
+        # 사용자 메시지 추가
+        user_prompt += f"{username}: {user_message}"
+
+        return (system_prompt, user_prompt)
     
     
-    def generate_response(self, user_message: str, username: str = "사용자") -> dict:
+    def generate_response(self, user_message: str, username: str = "사용자", session_id: str = "default") -> dict:
         """
-        사용자 메시지에 대한 챗봇 응답 생성
-        
+        사용자 메시지에 대한 챗봇 응답 생성 (LangChain 사용)
+
         Args:
             user_message (str): 사용자 입력
             username (str): 사용자 이름
-        
+            session_id (str): 세션 ID (대화 기록 관리용)
+
         Returns:
             dict: {
                 'reply': str,       # 챗봇 응답 텍스트
                 'image': str|None   # 이미지 경로 (선택)
             }
-        
-        
-        TODO: 전체 응답 생성 파이프라인 구현
-        
-        
-        ═══════════════════════════════════════════════════
-        📋 구현 단계
-        ═══════════════════════════════════════════════════
-        
-        [1단계] 초기 메시지 처리
-        
+        """
+        try:
+            print(f"\n{'='*60}")
+            print(f"[USER] {username} (session: {session_id}): {user_message}")
+
+            # [1단계] 초기 메시지 처리
             if user_message.strip().lower() == "init":
-                # 첫 인사말 반환
                 bot_name = self.config.get('name', '챗봇')
+                description = self.config.get('description', '')
+                init_message = f"안녕! 나는 {bot_name}이야."
+                if description:
+                    init_message += f"\n{description}"
+
+                print(f"[BOT] {init_message}")
+                print(f"{'='*60}\n")
                 return {
-                    'reply': f"안녕! 나는 {bot_name}이야.",
+                    'reply': init_message,
                     'image': None
                 }
-        
-        
-        [2단계] RAG 검색 수행
-        
+
+            # [2단계] RAG 검색 수행
             context, similarity, metadata = self._search_similar(
                 query=user_message,
                 threshold=0.45,
                 top_k=5
             )
-            
             has_context = (context is not None)
-        
-        
-        [3단계] 프롬프트 구성
-        
-            prompt = self._build_prompt(
+
+            # [3단계] 프롬프트 구성
+            system_prompt, user_prompt = self._build_prompt(
                 user_message=user_message,
                 context=context,
                 username=username
             )
-        
-        
-        [4단계] LLM API 호출
-        
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",  # 또는 gpt-4
-                messages=[
-                    {"role": "system", "content": "시스템 프롬프트"},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
-                max_tokens=500
-            )
-            
-            reply = response.choices[0].message.content
-        
-        
-        [5단계] 메모리 저장 (선택)
-        
-            if self.memory:
-                self.memory.save_context(
-                    {"input": user_message},
-                    {"output": reply}
-                )
-        
-        
-        [6단계] 응답 반환
-        
+
+            print(f"[RAG] Context found: {has_context}")
+            if has_context:
+                print(f"[RAG] Similarity: {similarity:.4f}")
+                print(f"[RAG] Context preview: {context[:100]}...")
+
+            # [4단계] LangChain으로 LLM 호출
+            # 메모리가 있는 경우와 없는 경우 분기
+            from langchain_core.messages import SystemMessage, HumanMessage
+            from langchain_core.chat_history import InMemoryChatMessageHistory
+            from langchain_core.runnables.history import RunnableWithMessageHistory
+
+            # 세션별 메모리 가져오기 또는 생성
+            if session_id not in self.message_store:
+                self.message_store[session_id] = InMemoryChatMessageHistory()
+
+            session_history = self.message_store[session_id]
+
+            # 메시지 구성
+            messages = [SystemMessage(content=system_prompt)]
+
+            # 대화 기록 추가
+            messages.extend(session_history.messages)
+
+            # 현재 사용자 메시지 추가
+            messages.append(HumanMessage(content=user_prompt))
+
+            print(f"[LLM] Calling ChatOpenAI... (대화 기록: {len(session_history.messages)}개)")
+
+            # LLM 호출
+            response = self.llm.invoke(messages)
+            reply = response.content
+
+            print(f"[BOT] {reply}")
+            print(f"{'='*60}\n")
+
+            # [5단계] 메모리 저장
+            session_history.add_user_message(user_prompt)
+            session_history.add_ai_message(reply)
+
+            # [6단계] 응답 반환
             return {
                 'reply': reply,
-                'image': None  # 이미지 검색 로직 추가 가능
+                'image': None  # 이미지 검색 로직은 추후 추가 가능
             }
-        
-        
-        ═══════════════════════════════════════════════════
-        💡 핵심 포인트
-        ═══════════════════════════════════════════════════
-        
-        1. RAG 활용
-           - 검색 결과가 있으면 프롬프트에 포함
-           - 없으면 일반 대화 모드
-        
-        2. 에러 처리
-           - try-except로 API 오류 처리
-           - 실패 시 기본 응답 반환
-        
-        3. 로깅
-           - 각 단계마다 print()로 상태 출력
-           - 디버깅에 매우 유용!
-        
-        4. 확장성
-           - 이미지 검색 로직 추가 가능
-           - 감정 분석 추가 가능
-           - 다중 언어 지원 가능
-        
-        
-        ═══════════════════════════════════════════════════
-        🐛 디버깅 예시
-        ═══════════════════════════════════════════════════
-        
-        print(f"\n{'='*50}")
-        print(f"[USER] {username}: {user_message}")
-        print(f"[RAG] Context found: {has_context}")
-        if has_context:
-            print(f"[RAG] Similarity: {similarity:.4f}")
-            print(f"[RAG] Context: {context[:100]}...")
-        print(f"[LLM] Calling API...")
-        print(f"[BOT] {reply}")
-        print(f"{'='*50}\n")
-        """
-        
-        # 여기에 전체 파이프라인 구현
-        # 위의 단계를 참고하여 자유롭게 설계하세요
-        
-        try:
-            # 구현 시작
-            pass
-            
+
         except Exception as e:
+            import traceback
             print(f"[ERROR] 응답 생성 실패: {e}")
+            print(traceback.format_exc())
             return {
                 'reply': "죄송해요, 일시적인 오류가 발생했어요. 다시 시도해주세요.",
                 'image': None
