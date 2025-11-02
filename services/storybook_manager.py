@@ -229,19 +229,19 @@ class StorybookManager:
             print("[StorybookManager] 9월 이후 - 게임 종료")
             return None
 
-        # 목표 달성 여부 확인
+        # 목표 달성 여부 확인 (디버깅 모드: 체크만 하고 항상 통과)
         all_achieved, goal_info = self.check_goals_achieved(game_state)
 
+        # 디버깅 모드: 목표 달성 여부와 상관없이 다음 월로 진행
+        next_month = current_month + 1
+        transition_id = f"{current_month}_to_{next_month}_transition"
+
         if all_achieved:
-            # 다음 월로 전환하는 스토리북
-            next_month = current_month + 1
-            transition_id = f"{current_month}_to_{next_month}_transition"
             print(f"[StorybookManager] 목표 달성! 전환 스토리북: {transition_id}")
-            return transition_id
         else:
-            # 목표 미달성 - 계속 채팅 모드
-            print(f"[StorybookManager] 목표 미달성. 계속 채팅 모드.")
-            return None
+            print(f"[StorybookManager] [디버깅 모드] 목표 미달성이지만 강제 진행: {transition_id}")
+
+        return transition_id
 
     def determine_ending(self, game_state) -> dict:
         """
