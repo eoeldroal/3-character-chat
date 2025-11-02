@@ -183,7 +183,9 @@ def api_get_stats():
 
         return jsonify({
             'success': True,
+            'current_month': game_state.current_month,
             'month': game_state.current_month,
+            'current_day': game_state.current_day,
             'day': game_state.current_day,
             'stats': game_state.stats.to_dict(),
             'flags': game_state.flags,

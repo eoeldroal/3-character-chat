@@ -224,10 +224,13 @@ function updateStatsUI(gameState) {
   updateStatBar("power", stats.power);
   updateStatBar("speed", stats.speed);
 
-  // 월 정보 업데이트
+  // 월 정보 업데이트 (current_month 또는 month 둘 다 처리)
   const monthElem = document.getElementById("current-month");
   if (monthElem) {
-    monthElem.textContent = `${gameState.current_month}월`;
+    const month = gameState.current_month !== undefined ? gameState.current_month : gameState.month;
+    if (month !== undefined) {
+      monthElem.textContent = `${month}월`;
+    }
   }
 
   // 친밀도 레벨 업데이트
@@ -570,6 +573,11 @@ function closeOnboarding() {
   if (modal) {
     modal.classList.remove('active');
   }
+
+  // 3월 가이드 메시지 표시
+  setTimeout(() => {
+    show3MonthGuide();
+  }, 500); // 모달이 완전히 닫힌 후 표시
 }
 
 // 다음 페이지
@@ -634,6 +642,63 @@ function updateNavigation() {
 }
 
 // ============================================================================
+// 3월 가이드 메시지
+// ============================================================================
+
+// 3월 초기 가이드 표시
+function show3MonthGuide() {
+  // 이미 가이드를 본 적이 있는지 확인
+  const hasSeenMarchGuide = localStorage.getItem('march_guide_shown');
+
+  if (hasSeenMarchGuide) {
+    return; // 이미 봤으면 표시하지 않음
+  }
+
+  try {
+    // 3월 가이드 메시지 구성
+    const guideMsgElement = document.createElement('div');
+    guideMsgElement.className = 'guide-message march-guide';
+    guideMsgElement.innerHTML = `
+      <div class="guide-header">
+        <h2>3월 - 시즌 준비</h2>
+      </div>
+      <div class="guide-content">
+        <p>드래프트까지 7개월! 민석이와 친밀도를 쌓고 기초 체력을 다지세요.</p>
+        <div class="guide-goals">
+          <h3>목표:</h3>
+          <ul>
+            <li>친밀도 20 이상</li>
+            <li>체력 60 이상</li>
+          </ul>
+        </div>
+      </div>
+      <div class="guide-footer">
+        <button onclick="closeMarchGuide()" class="guide-close-btn">시작하기</button>
+      </div>
+    `;
+
+    // 채팅 로그에 추가
+    if (chatLog) {
+      chatLog.appendChild(guideMsgElement);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    // localStorage에 표시 기록
+    localStorage.setItem('march_guide_shown', 'true');
+  } catch (err) {
+    console.error("3월 가이드 표시 실패:", err);
+  }
+}
+
+// 3월 가이드 닫기
+function closeMarchGuide() {
+  const guideMsg = document.querySelector('.march-guide');
+  if (guideMsg) {
+    guideMsg.remove();
+  }
+}
+
+// ============================================================================
 // 페이지 로드
 // ============================================================================
 
@@ -648,6 +713,14 @@ window.addEventListener("load", () => {
     if (chatLog && chatLog.childElementCount === 0) {
       console.log("초기 메시지 요청");
       sendMessage(true);
+
+      // 온보딩을 이미 본 경우 3월 가이드 표시
+      const hasSeenOnboarding = localStorage.getItem('onboarding_completed');
+      if (hasSeenOnboarding) {
+        setTimeout(() => {
+          show3MonthGuide();
+        }, 1000);
+      }
     }
   }, 500);
 });

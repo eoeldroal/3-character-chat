@@ -592,6 +592,104 @@
       }
 
       /* ============================================================================ */
+      /* 3월 가이드 메시지 스타일 */
+      /* ============================================================================ */
+      .guide-message {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin: 16px auto;
+        max-width: 500px;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        animation: slideInUp 0.5s ease-out;
+      }
+
+      @keyframes slideInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .guide-message .guide-header {
+        margin-bottom: 16px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        padding-bottom: 12px;
+      }
+
+      .guide-message .guide-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .guide-message .guide-content {
+        margin-bottom: 16px;
+      }
+
+      .guide-message .guide-content p {
+        margin: 0 0 12px 0;
+        font-size: 1rem;
+        line-height: 1.6;
+      }
+
+      .guide-message .guide-goals {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-top: 12px;
+      }
+
+      .guide-message .guide-goals h3 {
+        margin: 0 0 8px 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      .guide-message .guide-goals ul {
+        margin: 0;
+        padding-left: 20px;
+        list-style-type: disc;
+      }
+
+      .guide-message .guide-goals li {
+        margin: 4px 0;
+        font-size: 0.9rem;
+      }
+
+      .guide-message .guide-footer {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .guide-close-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+        padding: 10px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .guide-close-btn:hover {
+        background: white;
+        color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+      }
+
+      /* ============================================================================ */
       /* 온보딩 스토리북 스타일 */
       /* ============================================================================ */
       .onboarding-modal {

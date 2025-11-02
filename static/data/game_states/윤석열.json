@@ -1,13 +1,13 @@
 {
-  "session_id": "박현빈",
-  "current_month": 9,
+  "session_id": "윤석열",
+  "current_month": 5,
   "current_day": 1,
   "stats": {
-    "intimacy": 8,
-    "mental": 51,
-    "stamina": 49,
-    "power": 40,
-    "speed": 38
+    "intimacy": 0,
+    "mental": 50,
+    "stamina": 50,
+    "power": 30,
+    "speed": 40
   },
   "flags": {
     "backstory_revealed": false,
@@ -16,11 +16,7 @@
   },
   "event_history": [
     "4월 시작",
-    "5월 시작",
-    "6월 시작",
-    "7월 시작",
-    "8월 시작",
-    "9월 시작"
+    "5월 시작"
   ],
   "special_moments": [],
   "training_schedule": {}
