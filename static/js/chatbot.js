@@ -9,7 +9,8 @@ const AppState = {
   storybook: {
     current: null,          // 현재 스토리북 데이터
     currentPage: 0,         // 현재 페이지 번호
-    isActive: false         // 스토리북 모드 여부
+    isActive: false,        // 스토리북 모드 여부
+    isProcessing: false     // 처리 중 플래그 (중복 클릭 방지)
   },
 
   // 온보딩 상태
@@ -816,8 +817,20 @@ function storybookNext() {
  * 대화 시작하기 버튼 (스토리북 완료)
  */
 async function storybookStart() {
+  // 이미 처리 중이면 무시
+  if (AppState.storybook.isProcessing) {
+    console.log('[스토리북] 이미 처리 중...');
+    return;
+  }
+
+  AppState.storybook.isProcessing = true;
   console.log('[스토리북] 대화 시작하기 버튼 클릭');
-  await completeStorybook();
+
+  try {
+    await completeStorybook();
+  } finally {
+    AppState.storybook.isProcessing = false;
+  }
 }
 
 /**

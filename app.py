@@ -233,10 +233,9 @@ def api_advance_month():
         #         'goals_info': goals_info
         #     }), 400
 
-        # 이전 월 스탯 저장
         old_month = game_state.current_month
 
-        # 다음 스토리북 ID 가져오기
+        # 다음 스토리북 ID 가져오기 (현재 월 기준)
         next_storybook_id = storybook_manager.get_next_storybook_id(game_state)
 
         if not next_storybook_id:
@@ -245,15 +244,14 @@ def api_advance_month():
                 'error': '다음 단계를 결정할 수 없습니다'
             }), 400
 
-        # 스토리북 모드로 전환
-        game_state.set_storybook_mode(next_storybook_id)
-
-        # 9월이 아니면 월 증가
+        # 월 증가 (9월 이하일 때만)
         if game_state.current_month < 9:
             game_state.current_month += 1
-            new_month = game_state.current_month
-        else:
-            new_month = 9
+
+        new_month = game_state.current_month
+
+        # 스토리북 모드로 전환
+        game_state.set_storybook_mode(next_storybook_id)
 
         # 게임 상태 저장
         chatbot.game_manager.save(username)

@@ -74,6 +74,175 @@
         }
       ],
       "completion_action": "start_chat_mode"
+    },
+    "4_to_5_transition": {
+      "id": "4_to_5_transition",
+      "month": 4,
+      "title": "4월을 마치며...",
+      "pages": [
+        {
+          "text": "4월이 지나간다.\n\n기초 훈련을 통해 민석이의 기본기가 확실히 탄탄해졌다.\n\n처음엔 불만스러워했지만, 이제는 그 이유를 알게 된 듯하다.",
+          "image": null
+        },
+        {
+          "text": "\"코치님... 감사해요.\"\n\n훈련 후 민석이가 말한다.\n\n\"처음엔 왜 기초만 하냐고 짜증 났는데, 이제 알 것 같아요. 확실히 폼이 안정됐어요.\"\n\n그의 눈빛에 신뢰가 자리잡고 있다.",
+          "image": null
+        },
+        {
+          "text": "5월, 드래프트까지 4개월.\n\n이제 본격적으로 실전 기술을 연마할 시간이다.\n\n민석이와 함께 더 높은 목표를 향해 나아가자.",
+          "image": null
+        }
+      ],
+      "completion_action": "show_next_storybook",
+      "next_storybook_id": "5_opening"
+    },
+    "5_opening": {
+      "id": "5_opening",
+      "month": 5,
+      "title": "5월 - 실전 훈련",
+      "pages": [
+        {
+          "text": "5월, 날씨가 완전히 따뜻해졌다.\n\n이제 실전 기술 훈련을 시작할 때다. 타격 폼, 수비 동작, 주루 기술...\n\n드래프트에서 좋은 평가를 받으려면 이 모든 것이 완벽해야 한다.",
+          "image": null
+        },
+        {
+          "text": "\"오늘부터 실전 훈련이야. 준비됐어?\"\n\n당신의 말에 민석이가 단호하게 고개를 끄덕인다.\n\n\"네, 코치님. 이제 진짜 실력을 보여드릴게요!\"\n\n그의 눈빛이 달라졌다. 더 이상 의심하지 않는다.",
+          "image": null
+        },
+        {
+          "text": "5월, 실전 중심 훈련.\n\n민석이의 진짜 기량이 드러날 때다. 적절한 조언과 격려로 그를 최고로 만들어라.\n\n드래프트까지 4개월. 이제 반환점을 돌았다.",
+          "image": null
+        }
+      ],
+      "completion_action": "start_chat_mode"
+    },
+    "5_to_6_transition": {
+      "id": "5_to_6_transition",
+      "month": 5,
+      "title": "5월을 마치며...",
+      "pages": [
+        {
+          "text": "5월이 끝나간다.\n\n실전 훈련을 통해 민석이의 실력이 눈에 띄게 향상됐다.\n\n이제 그는 진짜 프로 지망생다운 모습을 보이고 있다.",
+          "image": null
+        },
+        {
+          "text": "\"코치님, 저 진짜 할 수 있을 것 같아요. 드래프트에서도...\"\n\n민석이가 처음으로 자신감 있는 표정을 짓는다.\n\n당신과 함께한 시간이 그에게 큰 변화를 가져다준 것이다.",
+          "image": null
+        }
+      ],
+      "completion_action": "show_next_storybook",
+      "next_storybook_id": "6_opening"
+    },
+    "6_opening": {
+      "id": "6_opening",
+      "month": 6,
+      "title": "6월 - 중반전",
+      "pages": [
+        {
+          "text": "6월, 드래프트까지 절반을 남겨두고.\n\n이제 민석이의 약점을 보완하고 강점을 극대화할 시간이다.\n\n모든 스탯을 균형있게 끌어올려야 한다.",
+          "image": null
+        },
+        {
+          "text": "\"코치님과 함께라면 뭐든 할 수 있을 것 같아요.\"\n\n민석이가 웃으며 말한다. 이제 그는 당신을 완전히 신뢰한다.\n\n남은 시간, 더욱 집중해서 그를 최고로 만들자.",
+          "image": null
+        }
+      ],
+      "completion_action": "start_chat_mode"
+    },
+    "6_to_7_transition": {
+      "id": "6_to_7_transition",
+      "month": 6,
+      "title": "6월을 마치며...",
+      "pages": [
+        {
+          "text": "6월이 지나간다.\n\n드래프트까지 3개월. 시간이 정말 빠르게 흘러간다.\n\n민석이는 이제 완전히 달라진 선수가 되었다.",
+          "image": null
+        }
+      ],
+      "completion_action": "show_next_storybook",
+      "next_storybook_id": "7_opening"
+    },
+    "7_opening": {
+      "id": "7_opening",
+      "month": 7,
+      "title": "7월 - 여름 강화 훈련",
+      "pages": [
+        {
+          "text": "7월, 무더운 여름.\n\n드래프트까지 2개월 남았다. 이제 마지막 스퍼트를 올릴 시간이다.\n\n체력과 멘탈 관리가 무엇보다 중요하다.",
+          "image": null
+        },
+        {
+          "text": "\"코치님, 이제 정말 가까워졌네요. 드래프트가...\"\n\n민석이의 목소리에 긴장감이 묻어난다.\n\n이제 마지막까지 함께 달려야 한다.",
+          "image": null
+        }
+      ],
+      "completion_action": "start_chat_mode"
+    },
+    "7_to_8_transition": {
+      "id": "7_to_8_transition",
+      "month": 7,
+      "title": "7월을 마치며...",
+      "pages": [
+        {
+          "text": "7월이 끝난다.\n\n드래프트가 한 달 앞으로 다가왔다.\n\n민석이와 함께한 시간들이 주마등처럼 스쳐 지나간다.",
+          "image": null
+        }
+      ],
+      "completion_action": "show_next_storybook",
+      "next_storybook_id": "8_opening"
+    },
+    "8_opening": {
+      "id": "8_opening",
+      "month": 8,
+      "title": "8월 - 막바지 준비",
+      "pages": [
+        {
+          "text": "8월, 드래프트가 한 달 앞으로.\n\n이제 정말 마지막이다. 모든 것을 점검하고 최종 준비를 해야 한다.\n\n민석이의 모든 것이 이 한 달에 달려있다.",
+          "image": null
+        },
+        {
+          "text": "\"코치님... 떨려요. 정말로.\"\n\n민석이가 솔직하게 말한다.\n\n\"하지만 코치님과 함께라서 다행이에요. 끝까지 함께 가요!\"\n\n마지막 한 달, 최선을 다하자.",
+          "image": null
+        }
+      ],
+      "completion_action": "start_chat_mode"
+    },
+    "8_to_9_transition": {
+      "id": "8_to_9_transition",
+      "month": 8,
+      "title": "8월을 마치며...",
+      "pages": [
+        {
+          "text": "8월이 끝나간다.\n\n이제 정말 드래프트가 눈앞이다.\n\n민석이와 함께한 6개월의 여정이 이제 결실을 맺을 시간이다.",
+          "image": null
+        },
+        {
+          "text": "\"코치님, 정말 감사했어요. 이 6개월... 제 인생에서 가장 소중한 시간이었어요.\"\n\n민석이가 진심 어린 눈빛으로 말한다.\n\n\"이제 드래프트에서 최선을 다할게요. 코치님을 위해서라도!\"\n\n9월, 운명의 달이 시작된다.",
+          "image": null
+        }
+      ],
+      "completion_action": "show_next_storybook",
+      "next_storybook_id": "9_opening"
+    },
+    "9_opening": {
+      "id": "9_opening",
+      "month": 9,
+      "title": "9월 - 드래프트",
+      "pages": [
+        {
+          "text": "9월.\n\n드디어 드래프트의 날이 왔다.\n\n민석이와 함께한 6개월이 이 순간을 위한 것이었다.",
+          "image": null
+        },
+        {
+          "text": "\"코치님, 준비됐어요. 이제 제 진짜 실력을 보여드릴게요!\"\n\n민석이가 자신감 넘치는 표정으로 말한다.\n\n당신과 함께한 시간이 그를 완전히 바꿔놓았다.",
+          "image": null
+        },
+        {
+          "text": "이제 결과를 확인할 시간이다.\n\n민석이는 어떤 평가를 받을까?\n\n당신의 노력이 결실을 맺을 것인가?",
+          "image": null
+        }
+      ],
+      "completion_action": "determine_ending"
     }
   }
 }
