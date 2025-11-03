@@ -1149,28 +1149,12 @@ async function completeStorybook() {
 async function transitionToChatMode() {
   console.log('[전환] 채팅 모드로 전환 시작');
 
-<<<<<<< HEAD
-  // 페이드 아웃
-  layer.classList.add('active');
-  await wait(500);
-
-  // 모달 숨기기
-  hideStorybookModal();
-=======
   // 스토리북 UI 숨기기
   hideStorybookInBook();
->>>>>>> 74db71e (feat: LangChain 실시간 스트리밍 구현 및 UI 개선)
 
   // 게임 상태 새로고침
   await fetchGameState();
 
-<<<<<<< HEAD
-  // 페이드 인
-  await wait(100);
-  layer.classList.remove('active');
-
-=======
->>>>>>> 74db71e (feat: LangChain 실시간 스트리밍 구현 및 UI 개선)
   console.log('[전환] 채팅 모드로 전환 완료');
 }
 
@@ -1181,23 +1165,9 @@ async function transitionToChatMode() {
 async function transitionToStorybookMode(storybookId) {
   console.log('[전환] 스토리북 모드로 전환 시작');
 
-<<<<<<< HEAD
-  // 페이드 아웃
-  layer.classList.add('active');
-  await wait(500);
-
-  // 스토리북 로드
-  await loadAndShowStorybook(storybookId);
-
-  // 페이드 인
-  await wait(100);
-  layer.classList.remove('active');
-
-=======
   // 스토리북 로드 및 표시
   await loadAndShowStorybook(storybookId);
 
->>>>>>> 74db71e (feat: LangChain 실시간 스트리밍 구현 및 UI 개선)
   console.log('[전환] 스토리북 모드로 전환 완료');
 }
 
@@ -1206,39 +1176,16 @@ async function transitionToStorybookMode(storybookId) {
  * @param {object} endingStorybook - 엔딩 스토리북 데이터
  */
 async function transitionToEnding(endingStorybook) {
-<<<<<<< HEAD
-  const layer = document.getElementById('transition-layer');
-
-  // 페이드 아웃
-  layer.classList.add('active');
-  await wait(500);
-=======
   console.log('[전환] 엔딩으로 전환 시작');
->>>>>>> 74db71e (feat: LangChain 실시간 스트리밍 구현 및 UI 개선)
 
   // 엔딩 스토리북 설정
   AppState.storybook.current = endingStorybook;
   AppState.storybook.currentPage = 0;
   AppState.storybook.isActive = true;
 
-<<<<<<< HEAD
-  // 타이틀 업데이트
-  document.getElementById('storybook-title').textContent = endingStorybook.title;
-
-  // 첫 페이지 렌더링
-  renderStorybookPage(0);
-
-  // 모달 표시
-  showStorybookModal();
-
-  // 페이드 인
-  await wait(100);
-  layer.classList.remove('active');
-=======
   // 스토리북 모드로 전환 및 렌더링
   showStorybookInBook();
   renderStorybookPageInBook(0);
->>>>>>> 74db71e (feat: LangChain 실시간 스트리밍 구현 및 UI 개선)
 
   console.log('[전환] 엔딩으로 전환 완료:', endingStorybook.title);
 }
