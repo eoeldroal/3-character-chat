@@ -674,13 +674,7 @@ def api_complete_storybook():
             'message': action_message
         }
 
-        # 액션 타입에 따라 처리
-        if storybook_id == '8_opening':
-            game_state.next_action = "submit_advice"
-            response_data['next_action'] = 'await_user_input' # 프론트엔드에 사용자 입력을 기다리라고 알림
-            print("[Game Event] '조언 제출 대기' 모드로 전환됩니다.")
-        
-        elif action_type == 'start_chat_mode':
+        if action_type == 'start_chat_mode':
             game_state.set_chat_mode()
             response_data['message'] = '대화를 시작하세요'
 
