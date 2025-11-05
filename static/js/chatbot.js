@@ -387,58 +387,7 @@ async function sendMessage(isInitial = false) {
     }
 
     if (metadata) {
-      const data = metadata;
-
-      // 1. 이벤트에 선택지(choices)가 있는지 확인
-      if (data.event && data.event.choices) {
-        // 선택지가 있으면 버튼을 표시하는 함수를 호출
-        showEventWithOptions(data.event);
-      } else {
-        // 2. 선택지가 없는 일반적인 경우, 기존 로직 실행
-        if (data.debug) {
-            console.group("🎮 게임 상태 업데이트");
-            console.log("📅 현재 시점:", `${data.debug.game_state.current_month}월 ${data.debug.game_state.current_day}일`);
-            console.log("🎯 드래프트까지:", `${data.debug.game_state.months_until_draft}개월`);
-            console.log("💖 친밀도 레벨:", data.debug.game_state.intimacy_level);
-
-            console.group("📊 스탯 변화");
-            if (Object.keys(data.debug.stat_changes.changes).length > 0) {
-              console.log("변화량:", data.debug.stat_changes.changes);
-              console.log("이유:", data.debug.stat_changes.reason);
-              console.table({
-                "이전": data.debug.stat_changes.old_stats,
-                "이후": data.debug.stat_changes.new_stats
-              });
-            } else {
-              console.log("스탯 변화 없음");
-            }
-            console.groupEnd();
-
-            if (data.debug.event_check.triggered) {
-              console.log("🎭 이벤트 발생:", data.debug.event_check.event_name);
-            }
-
-            if (data.debug.hint_provided) {
-              console.log("💡 힌트 제공됨");
-            }
-
-            console.log("💬 대화 횟수:", data.debug.conversation_count);
-            console.log("📜 이벤트 히스토리:", data.debug.event_history);
-            console.groupEnd();
-    
-            // 스탯 UI 업데이트
-            updateStatsUI(data.debug.game_state);
-        }
-        // 단순 이벤트 알림 표시
-        if (data.event) {
-          showEventNotification(data.event);
-        }
-      }
-
-      // 3. 힌트 표시는 이벤트 종류와 상관없이 항상 처리
-      if (data.hint) {
-        showHintNotification(data.hint);
-      }
+      handleChatMetadata(metadata);
     }
 
   } catch (error) {
@@ -569,7 +518,7 @@ async function startNewMonth(storybookId) {
   // 1. 채팅 화면 초기화
   clearChatDisplay();
 
-  // 2. 서버에 월 시작 알림 (시스템 메시지 자동 전송)
+  // 2. 시스템 메시지 가져오기
   try {
     const response = await fetch('/api/chat/month-start', {
       method: 'POST',
@@ -582,35 +531,171 @@ async function startNewMonth(storybookId) {
 
     const data = await response.json();
 
-    if (data.success) {
-      // 시스템 메시지는 숨김 (DOM에 추가하되 display:none)
-      if (data.system_message) {
-        const messageId = `msg-${AppState.counters.message++}`;
-        const messageElem = document.createElement("div");
-        messageElem.classList.add("message", "system", "hidden");
-        messageElem.id = messageId;
-        messageElem.textContent = data.system_message;
-        messageElem.style.display = 'none'; // 완전히 숨김
-
-        if (chatLog) {
-          chatLog.appendChild(messageElem);
-        }
-
-        console.log("[Month] 시스템 메시지 전송 (숨김):", data.system_message.substring(0, 50) + "...");
-      }
-
-      // 챗봇의 첫 응답만 화면에 표시
-      if (data.bot_response) {
-        appendMessageSync('bot', data.bot_response);
-        console.log("[Month] 챗봇 첫 응답 표시");
-      }
-
-      console.log("[Month] 월 시작 처리 완료");
-    } else {
-      console.error("[ERROR] 월 시작 처리 실패:", data.error);
+    if (!data.success || !data.system_message) {
+      console.log("[Month] 시스템 메시지 없음, 월 시작 처리 완료");
+      return;
     }
+
+    const systemMessage = data.system_message;
+    console.log("[Month] 시스템 메시지:", systemMessage.substring(0, 50) + "...");
+
+    // 3. 기존 streaming 로직 재사용하여 챗봇 응답 받기
+    await sendSystemMessageStreaming(systemMessage);
+
+    console.log("[Month] 월 시작 처리 완료");
+
   } catch (error) {
     console.error("[ERROR] 월 시작 처리 실패:", error);
+  }
+}
+
+/**
+ * 시스템 메시지를 streaming으로 전송하고 응답 받기
+ * (기존 sendMessage의 streaming 로직 재사용)
+ */
+async function sendSystemMessageStreaming(systemMessage) {
+  // 로딩 표시
+  const loadingId = appendMessageSync("loading", "생각 중...");
+
+  try {
+    // 기존 /api/chat/stream 사용 (코드 재사용)
+    const response = await fetch("/api/chat/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: systemMessage,
+        username: username,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // 로딩 메시지 제거
+    removeMessage(loadingId);
+
+    // 봇 메시지 컨테이너 생성 (빈 상태)
+    const messageId = createBotMessageContainer();
+
+    // 응답 읽기 (ReadableStream) - 기존 로직과 동일
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = '';
+    let fullResponse = '';
+    let metadata = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split('\n\n');
+      buffer = events.pop();
+
+      for (const eventStr of events) {
+        if (!eventStr.trim() || !eventStr.startsWith('data: ')) continue;
+
+        try {
+          const jsonStr = eventStr.substring(6);
+          const event = JSON.parse(jsonStr);
+
+          if (event.type === 'token') {
+            fullResponse += event.content;
+            updateBotMessageContent(messageId, fullResponse);
+
+          } else if (event.type === 'metadata') {
+            metadata = event.content;
+
+          } else if (event.type === 'done') {
+            console.log('[STREAM] 완료');
+
+          } else if (event.type === 'error') {
+            console.error('[STREAM] 오류:', event.content);
+            fullResponse = event.content;
+            updateBotMessageContent(messageId, fullResponse);
+          }
+
+        } catch (e) {
+          console.error('[STREAM] 이벤트 파싱 실패:', e, eventStr);
+        }
+      }
+    }
+
+    // 메타데이터 처리 (기존 로직과 동일)
+    if (metadata) {
+      handleChatMetadata(metadata);
+    }
+
+  } catch (error) {
+    removeMessage(loadingId);
+    showError('네트워크 오류가 발생했습니다. 다시 시도해주세요.', error);
+  }
+}
+
+/**
+ * 채팅 메타데이터 처리 (sendMessage에서 분리, 재사용)
+ */
+function handleChatMetadata(data) {
+  // 1. 이벤트에 선택지(choices)가 있는지 확인
+  if (data.event && data.event.choices) {
+    showEventWithOptions(data.event);
+    return; // 선택지가 있으면 다른 처리는 건너뜀
+  }
+
+  // 2. 디버그 정보 출력
+  if (data.debug) {
+    console.group("🎮 게임 상태 업데이트");
+    console.log("📅 현재 시점:", `${data.debug.game_state.current_month}월 ${data.debug.game_state.current_day}일`);
+    console.log("🎯 드래프트까지:", `${data.debug.game_state.months_until_draft}개월`);
+    console.log("💖 친밀도 레벨:", data.debug.game_state.intimacy_level);
+
+    console.group("📊 스탯 변화");
+    if (Object.keys(data.debug.stat_changes.changes).length > 0) {
+      console.log("변화량:", data.debug.stat_changes.changes);
+      console.log("이유:", data.debug.stat_changes.reason);
+      console.table({
+        "이전": data.debug.stat_changes.old_stats,
+        "이후": data.debug.stat_changes.new_stats
+      });
+    } else {
+      console.log("스탯 변화 없음");
+    }
+    console.groupEnd();
+
+    if (data.debug.event_check.triggered) {
+      console.log("🎭 이벤트 발생:", data.debug.event_check.event_name);
+    }
+
+    if (data.debug.hint_provided) {
+      console.log("💡 힌트 제공됨");
+    }
+
+    console.log("💬 대화 횟수:", data.debug.conversation_count);
+    console.log("📜 이벤트 히스토리:", data.debug.event_history);
+    console.groupEnd();
+
+    // 스탯 UI 업데이트
+    updateStatsUI(data.debug.game_state);
+  }
+
+  // 3. 단순 이벤트 알림 표시 (선택지 없는 경우)
+  if (data.event && !data.event.choices) {
+    showEventNotification(data.event);
+  }
+
+  // 4. 힌트 표시
+  if (data.hint) {
+    showHintNotification(data.hint);
+  }
+
+  // 5. 스토리북 이벤트 확인 (기존에 없던 로직 추가)
+  if (data.storybook_id) {
+    console.log(`[이벤트] 스토리북 발동: ${data.storybook_id}`);
+    setTimeout(() => {
+      loadAndShowStorybook(data.storybook_id);
+    }, 500);
   }
 }
 
@@ -1026,10 +1111,11 @@ async function closeOnboarding() {
     // 3. 스토리북 확인
     await checkInitialStorybook();
 
-    // 4. 초기 메시지 요청
+    // 4. 초기 메시지 요청 (스토리북이 없을 때만)
+    // 스토리북이 있으면 스토리북 완료 후 startNewMonth()에서 자동으로 첫 메시지 생성
     setTimeout(() => {
-      if (chatLog && chatLog.childElementCount === 0) {
-        console.log("초기 메시지 요청");
+      if (chatLog && chatLog.childElementCount === 0 && !AppState.storybook.isProcessing) {
+        console.log("초기 메시지 요청 (스토리북 없음)");
         sendMessage(true);
       }
     }, 500);
@@ -1382,6 +1468,16 @@ async function storybookStartFromBook() {
 async function completeStorybook() {
   try {
     const storybookId = AppState.storybook.current.id; // 스토리북 ID 저장
+    const completionAction = AppState.storybook.current.completion_action;
+
+    // ⭐ 엔딩인 경우 API 호출 없이 바로 게임 종료 처리
+    if (completionAction === 'game_end') {
+      console.log('[엔딩] 게임 종료 처리');
+      hideStorybookModal();
+      alert('게임이 종료되었습니다. 플레이해주셔서 감사합니다!');
+      // 선택사항: 게임 상태 초기화 또는 메인 화면으로 이동
+      return;
+    }
 
     const response = await fetch('/api/storybook/complete', {
       method: 'POST',
@@ -1399,8 +1495,15 @@ async function completeStorybook() {
 
       // 다음 액션에 따라 분기
       if (data.next_action === 'start_chat_mode') {
-        // 채팅 모드로 전환 (완료된 스토리북 ID 전달)
-        await transitionToChatMode(storybookId);
+        // ⭐ UX 개선: 즉시 채팅 화면 전환 → 백그라운드에서 메시지 처리
+        console.log('[스토리북] 채팅 모드로 즉시 전환');
+
+        // 1. 먼저 채팅 화면으로 전환 (즉각 반응, 사용자 답답함 해소)
+        await transitionToChatMode(null);
+
+        // 2. 백그라운드에서 시스템 메시지 처리 및 스트리밍 (await 없이 비동기 실행)
+        //    사용자는 로딩 표시 → 실시간 타이핑을 보게 됨
+        startNewMonth(storybookId);
 
       } else if (data.next_action === 'show_next_storybook') {
         // 다음 스토리북 표시
@@ -1435,7 +1538,8 @@ async function completeStorybook() {
 
 /**
  * 채팅 모드로 부드럽게 전환 (책 안에서)
- * @param {string} storybookId - 완료된 스토리북 ID (시스템 메시지용)
+ * @param {string|null} storybookId - 완료된 스토리북 ID (시스템 메시지용)
+ *                                     null인 경우 시스템 메시지 전송 생략 (이미 처리된 경우)
  */
 async function transitionToChatMode(storybookId = null) {
   console.log('[전환] 채팅 모드로 전환 시작, 스토리북 ID:', storybookId);
@@ -1444,6 +1548,7 @@ async function transitionToChatMode(storybookId = null) {
   hideStorybookInBook();
 
   // 월 시작 처리 (채팅 화면 초기화 + 시스템 메시지)
+  // storybookId가 null이면 이미 처리되었으므로 생략
   if (storybookId) {
     await startNewMonth(storybookId);
   }
@@ -1579,10 +1684,11 @@ window.addEventListener("load", async () => {
     // 게임 상태 가져오기 (월 정보 업데이트)
     await fetchGameState();
 
-    // 초기 메시지 요청
+    // 초기 메시지 요청 (스토리북이 없을 때만)
+    // 스토리북이 있으면 스토리북 완료 후 startNewMonth()에서 자동으로 첫 메시지 생성
     setTimeout(() => {
-      if (chatLog && chatLog.childElementCount === 0) {
-        console.log("초기 메시지 요청");
+      if (chatLog && chatLog.childElementCount === 0 && !AppState.storybook.isProcessing) {
+        console.log("초기 메시지 요청 (스토리북 없음)");
         sendMessage(true);
       }
     }, 500);

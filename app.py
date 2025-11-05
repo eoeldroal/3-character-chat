@@ -841,7 +841,8 @@ def get_month_system_message(storybook_id: str) -> str:
 @app.route('/api/chat/month-start', methods=['POST'])
 def api_month_start():
     """
-    새 월 시작 시 시스템 메시지 자동 전송 및 챗봇 응답 생성
+    새 월 시작 시 시스템 메시지 반환
+    (실제 챗봇 응답은 /api/chat/stream을 통해 스트리밍)
 
     Request:
         {
@@ -852,45 +853,19 @@ def api_month_start():
     Response:
         {
             "success": True,
-            "system_message": "시스템 메시지 내용",
-            "bot_response": "챗봇의 첫 응답"
+            "system_message": "시스템 메시지 내용" or None
         }
     """
     try:
         data = request.get_json()
-        username = data.get('username', '사용자')
         storybook_id = data.get('storybook_id', '')
-
-        from services import get_chatbot_service
-        chatbot = get_chatbot_service()
-        game_state = chatbot.game_manager.get_or_create(username)
 
         # 월별 시스템 메시지 생성
         system_message = get_month_system_message(storybook_id)
 
-        if not system_message:
-            # 시스템 메시지가 없으면 그냥 성공 반환 (채팅 화면만 초기화)
-            return jsonify({
-                'success': True,
-                'system_message': None,
-                'bot_response': None
-            })
-
-        # 시스템 메시지로 챗봇 응답 생성
-        response = chatbot.generate_response(
-            user_message=system_message,
-            username=username
-        )
-
         return jsonify({
             'success': True,
-            'system_message': system_message,
-            'bot_response': response.get('reply', ''),
-            'game_state': {
-                'current_month': game_state.current_month,
-                'current_phase': game_state.current_phase,
-                'stats': game_state.stats.to_dict()
-            }
+            'system_message': system_message
         })
 
     except Exception as e:

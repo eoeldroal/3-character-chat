@@ -58,6 +58,14 @@ class EventDetector:
                     "강태가 코치를 어느 정도 신뢰하기 시작했다"
                 ],
                 "trigger_message": "강태에게 무슨 일이 생긴 것 같습니다...",
+                "storybook_id": "5_main_event",
+                "flags": {
+                    "backstory_revealed": True,
+                    "conflict_event_completed": True
+                },
+                "stat_changes": {
+                    "intimacy": 10
+                },
                 "hints": [
                     "강태의 과거에 대해 물어보세요",
                     "강태의 가족 이야기를 들어보세요",
@@ -88,10 +96,10 @@ class EventDetector:
         event_key = None
 
         # 3월이고 아직 4월로 안 넘어갔으면
-        if current_month == 3 and "march_completed" not in game_state.event_history:
+        if current_month == 3 and not game_state.flags.get("march_completed", False):
             event_key = "3월_종료"
         # 5월이고 갈등 이벤트를 안 봤으면
-        elif current_month == 5 and "conflict_event" not in game_state.event_history:
+        elif current_month == 5 and not game_state.flags.get("conflict_event_completed", False):
             event_key = "5월_갈등"
 
         if not event_key:
@@ -109,12 +117,22 @@ class EventDetector:
         )
 
         if is_triggered:
-            return {
+            result = {
                 'event_key': event_key,
                 'event_name': event_def['name'],
                 'trigger_message': event_def['trigger_message'],
                 'reason': reason
             }
+
+            # 선택적 필드 추가
+            if 'storybook_id' in event_def:
+                result['storybook_id'] = event_def['storybook_id']
+            if 'flags' in event_def:
+                result['flags'] = event_def['flags']
+            if 'stat_changes' in event_def:
+                result['stat_changes'] = event_def['stat_changes']
+
+            return result
 
         return None
 
@@ -164,8 +182,6 @@ class EventDetector:
 - 현재 월: {current_month}월
 - 친밀도: {intimacy}/100
 - 총 대화 횟수: {conversation_count}회
-- 이벤트 히스토리: {event_history}
-
 [최근 대화 내용]
 {conversation_summary}
 
@@ -181,7 +197,6 @@ class EventDetector:
                 "current_month": game_state.current_month,
                 "intimacy": game_state.stats.intimacy,
                 "conversation_count": len(recent_messages),
-                "event_history": ", ".join(game_state.event_history) if game_state.event_history else "없음",
                 "conversation_summary": conversation_summary if conversation_summary else "대화 없음"
             })
 
@@ -224,9 +239,9 @@ class EventDetector:
         current_month = game_state.current_month
         event_key = None
 
-        if current_month == 3 and "march_completed" not in game_state.event_history:
+        if current_month == 3 and not game_state.flags.get("march_completed", False):
             event_key = "3월_종료"
-        elif current_month == 5 and "conflict_event" not in game_state.event_history:
+        elif current_month == 5 and not game_state.flags.get("conflict_event_completed", False):
             event_key = "5월_갈등"
 
         if not event_key:

@@ -458,7 +458,7 @@ class ChatbotService:
             state_info = f"""
 
 [현재 게임 상태]
-- 현재 시점: {game_state.current_month}월
+- 현재 월: {game_state.current_month}월
 - 친밀도: {game_state.stats.intimacy}/100
 - 멘탈: {game_state.stats.mental}/100
 - 체력: {game_state.stats.stamina}/100
@@ -468,6 +468,17 @@ class ChatbotService:
 
 [캐릭터 행동 가이드]
 {self._get_behavior_guide(game_state)}
+"""
+            training_summary = game_state.get_recent_training_summary()
+            if training_summary:
+                state_info += f"""
+
+[최근 훈련 기록]
+{training_summary}
+
+[훈련 응답 가이드]
+- 최근 훈련에서 느낀 몸 상태와 감정을 자연스럽게 언급합니다.
+- 강도가 높았다면 회복에 대한 언급도 덧붙입니다.
 """
             system_parts.append(state_info)
 
@@ -568,25 +579,9 @@ class ChatbotService:
         print(f"\n{'='*50}")
         print(f"[USER] {username}: {user_message}")
         try:
-
             game_state = self.game_manager.get_or_create(username)
-            conversation_history = self.get_session_history(username).messages
-            event_info = self.event_detector.check_event(
-                game_state=game_state,
-                conversation_history=conversation_history
-            )
 
-            if event_info and event_info['event_key'] == '5월_갈등':
-                print(f"[EVENT] 5월 메인 이벤트 발생! 스토리북 '5_main_event'를 재생합니다.")
-                game_state.flags['backstory_revealed'] = True
-                game_state.stats.apply_changes({"intimacy": 10})
-                self.game_manager.save(username)
-                
-                return {
-                    'reply': event_info['trigger_message'],
-                    'storybook_id': '5_main_event'
-                }
-
+            # [1단계] 초기 메시지 처리
             if user_message.strip().lower() == "init":
                 bot_name = self.config.get('name', '챗봇')
                 greeting = "왜 오셨어요. 알아서 훈련하겠다고 말씀드렸잖아요."
@@ -696,6 +691,21 @@ class ChatbotService:
 
             if event_info:
                 print(f"[EVENT] ✓ Event triggered: {event_info['event_name']}")
+
+                # 이벤트의 flags 적용
+                if 'flags' in event_info:
+                    for flag_key, flag_value in event_info['flags'].items():
+                        game_state.flags[flag_key] = flag_value
+                    print(f"[EVENT] ✓ Flags applied: {event_info['flags']}")
+
+                # 이벤트의 stat_changes 적용
+                if 'stat_changes' in event_info:
+                    game_state.stats.apply_changes(event_info['stat_changes'])
+                    print(f"[EVENT] ✓ Stat changes applied: {event_info['stat_changes']}")
+
+                # 게임 상태 저장
+                self.game_manager.save(username)
+
             if hint:
                 print(f"[HINT] ✓ Hint provided: {hint}")
 
@@ -780,25 +790,6 @@ class ChatbotService:
 
         try:
             game_state = self.game_manager.get_or_create(username)
-            conversation_history = self.get_session_history(username).messages
-            event_info = self.event_detector.check_event(
-                game_state=game_state,
-                conversation_history=conversation_history
-            )
-
-            if event_info and event_info['event_key'] == '5월_갈등':
-                print(f"[EVENT] 5월 메인 이벤트 발생! (스트림)")
-                game_state.flags['backstory_revealed'] = True
-                game_state.stats.apply_changes({"intimacy": 10})
-                self.game_manager.save(username)
-
-                response_dict = {
-                    'reply': event_info['trigger_message'],
-                    'storybook_id': '5_main_event'
-                }
-                yield {'type': 'full_response', 'content': response_dict}
-                yield {'type': 'done', 'content': ''}
-                return # 여기서 함수 종료
 
             # [1단계] 초기 메시지 처리
             if user_message.strip().lower() == "init":
@@ -914,6 +905,21 @@ class ChatbotService:
 
             if event_info:
                 print(f"[EVENT] ✓ Event triggered: {event_info['event_name']}")
+
+                # 이벤트의 flags 적용
+                if 'flags' in event_info:
+                    for flag_key, flag_value in event_info['flags'].items():
+                        game_state.flags[flag_key] = flag_value
+                    print(f"[EVENT] ✓ Flags applied: {event_info['flags']}")
+
+                # 이벤트의 stat_changes 적용
+                if 'stat_changes' in event_info:
+                    game_state.stats.apply_changes(event_info['stat_changes'])
+                    print(f"[EVENT] ✓ Stat changes applied: {event_info['stat_changes']}")
+
+                # 게임 상태 저장
+                self.game_manager.save(username)
+
             if hint:
                 print(f"[HINT] ✓ Hint provided: {hint}")
 
