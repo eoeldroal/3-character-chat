@@ -41,6 +41,16 @@ const AppState = {
     status: 'pending',      // 'pending' | 'loading' | 'ready' | 'error'
     storybookChecked: false,
     gameStateLoaded: false
+  },
+
+  // 스탯 애니메이션을 위한 이전 값 저장
+  previousStats: {
+    intimacy: null,
+    mental: null,
+    stamina: null,
+    batting: null,
+    speed: null,
+    defense: null
   }
 };
 
@@ -922,6 +932,11 @@ function updateStatBar(statName, value) {
     return;
   }
 
+  // 이전 값과 비교하여 변화 감지
+  const previousValue = AppState.previousStats[statName];
+  const hasChanged = previousValue !== null && previousValue !== value;
+  const change = hasChanged ? value - previousValue : 0;
+
   // 수정: 모든 스탯의 최대값이 100이므로, 텍스트를 '값/100' 형식으로 업데이트합니다.
   statValue.textContent = `${value}/100`;
   statBar.style.width = `${value}%`;
@@ -935,6 +950,49 @@ function updateStatBar(statName, value) {
     statBar.style.backgroundColor = "#FF9800"; // 낮음 (주황색)
   } else {
     statBar.style.backgroundColor = "#F44336"; // 매우 낮음 (빨간색)
+  }
+
+  // 변화가 있으면 애니메이션 적용
+  if (hasChanged && change !== 0) {
+    // 기존 애니메이션 클래스 제거
+    statBar.classList.remove('stat-increased', 'stat-decreased');
+
+    // 새 애니메이션 클래스 추가
+    const animationClass = change > 0 ? 'stat-increased' : 'stat-decreased';
+    statBar.classList.add(animationClass);
+
+    // 변화량 표시 인디케이터 생성
+    createStatChangeIndicator(statBar, change);
+
+    // 애니메이션 종료 후 클래스 제거
+    setTimeout(() => {
+      statBar.classList.remove(animationClass);
+    }, 600);
+  }
+
+  // 현재 값을 이전 값으로 저장
+  AppState.previousStats[statName] = value;
+}
+
+function createStatChangeIndicator(statBar, change) {
+  // 이유: 스탯 변화량을 시각적으로 표시하는 부유 인디케이터를 생성합니다.
+  const indicator = document.createElement('div');
+  indicator.className = 'stat-change-indicator';
+  indicator.textContent = change > 0 ? `+${change}` : `${change}`;
+  indicator.style.color = change > 0 ? '#4CAF50' : '#F44336';
+
+  // 스탯 바의 부모 요소(stat-bar-container)에 추가
+  const container = statBar.parentElement;
+  if (container) {
+    container.style.position = 'relative'; // 위치 기준 설정
+    container.appendChild(indicator);
+
+    // 애니메이션 종료 후 제거
+    setTimeout(() => {
+      if (indicator.parentElement) {
+        indicator.remove();
+      }
+    }, 1200);
   }
 }
 /* <<< 수정 끝 >>> */
