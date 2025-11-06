@@ -361,6 +361,26 @@ def api_advance_month():
         if game_state.current_month < 9 and not august_tournament_calculated:
             game_state.current_month += 1
 
+            # 월별 체력 회복
+            stamina_recovery = 0
+            if game_state.current_month in [3, 4, 5]:
+                stamina_recovery = 25
+            elif game_state.current_month in [6, 7]:
+                stamina_recovery = 15
+            elif game_state.current_month in [8, 9]:
+                stamina_recovery = 10
+
+            if stamina_recovery > 0:
+                game_state.stats.apply_changes({'stamina': stamina_recovery})
+                print(f"[월 진행] {game_state.current_month}월 시작: 체력 +{stamina_recovery}")
+
+            # 훈련 횟수 리셋
+            game_state.training_count_this_month = 0
+            print(f"[월 진행] 훈련 횟수 리셋")
+
+            # 이전 월 스탯 저장 (전환 스토리북에서 변화량 표시용)
+            game_state.save_previous_month_stats()
+
         new_month = game_state.current_month
 
         # 스토리북 모드로 전환

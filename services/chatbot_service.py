@@ -584,7 +584,7 @@ class ChatbotService:
             # [1단계] 초기 메시지 처리
             if user_message.strip().lower() == "init":
                 bot_name = self.config.get('name', '챗봇')
-                greeting = "왜 오셨어요. 알아서 훈련하겠다고 말씀드렸잖아요."
+                greeting = "다시 돌아오셨네요."
                 print(f"[BOT] (초기 인사) {greeting}")
                 print(f"{'='*50}\n")
                 return {
@@ -794,7 +794,7 @@ class ChatbotService:
             # [1단계] 초기 메시지 처리
             if user_message.strip().lower() == "init":
                 bot_name = self.config.get('name', '챗봇')
-                greeting = "왜 오셨어요. 알아서 훈련하겠다고 말씀드렸잖아요."
+                greeting = "다시 돌아오셨네요."
                 print(f"[BOT] (초기 인사) {greeting}")
                 print(f"{'='*50}\n")
 

@@ -238,6 +238,7 @@
         flex-direction: column;
         height: 100%;
         padding: 45px;
+        box-sizing: border-box;
         opacity: 1;
         transition: opacity 0.3s ease;
       }
@@ -640,9 +641,21 @@
           display: none;
         }
 
-        /* 모바일에서 알림 컨테이너도 숨김 */
+        /* 모바일에서 알림 컨테이너 조정 */
         .notifications-container {
-          display: none;
+          top: 70px;
+          max-width: 95%;
+          padding: 10px 15px;
+          gap: 8px;
+        }
+
+        .notification-item {
+          padding: 10px 16px;
+          font-size: 0.85rem;
+        }
+
+        .notification-title {
+          font-size: 0.85rem;
         }
 
         /* 모바일에서 왼쪽 버튼 그룹 크기 조정 */
@@ -830,70 +843,104 @@
         letter-spacing: 0.5px;
       }
 
-      /* 알림 컨테이너 (스탯 패널 아래) */
+      /* 알림 컨테이너 (상단 중앙) */
       .notifications-container {
         position: fixed;
-        right: 20px;
-        top: 550px;
-        width: 300px;
-        max-height: calc(100vh - 570px);
-        overflow-y: auto;
-        z-index: 100;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 12px;
+        max-width: 90%;
+        overflow-x: auto;
+        padding: 15px 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 50px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        z-index: 150;
+        border: 1px solid rgba(51, 107, 104, 0.1);
       }
 
-      /* 개별 알림 스타일 */
+      /* 스크롤바 스타일 (가로 스크롤) */
+      .notifications-container::-webkit-scrollbar {
+        height: 6px;
+      }
+
+      .notifications-container::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 3px;
+      }
+
+      .notifications-container::-webkit-scrollbar-thumb {
+        background: #336B68;
+        border-radius: 3px;
+      }
+
+      /* 개별 알림 스타일 (칩 형태) */
       .notification-item {
         background: white;
-        border-radius: 2px;
-        margin-bottom: 12px;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 25px;
+        padding: 12px 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid #336B68;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: slideInUp 0.3s ease;
+        position: relative;
         overflow: hidden;
-        animation: slideInRight 0.3s;
-        border: 1px solid #E8E8E8;
+        flex-shrink: 0;
       }
 
-      @keyframes slideInRight {
+      @keyframes slideInUp {
         from {
-          transform: translateX(100%);
+          transform: translateY(50px);
           opacity: 0;
         }
         to {
-          transform: translateX(0);
+          transform: translateY(0);
           opacity: 1;
         }
       }
 
-      .notification-header {
-        padding: 16px;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: background 0.2s;
-      }
-
-      .notification-header:hover {
-        background: #FAFAF8;
-      }
-
-      .notification-item.event .notification-header {
+      .notification-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 20px rgba(51, 107, 104, 0.3);
         background: #336B68;
         color: white;
       }
 
-      .notification-item.hint .notification-header {
+      .notification-item.hint {
         background: #FFF9E6;
-        border-left: 4px solid #B8860B;
+        border-color: #B8860B;
+      }
+
+      .notification-item.hint:hover {
+        background: #B8860B;
+        color: white;
+      }
+
+      .notification-item.event {
+        background: #336B68;
+        color: white;
+        border-color: #2C5C59;
+      }
+
+      .notification-item.event:hover {
+        background: #2C5C59;
+        transform: translateY(-5px) scale(1.05);
       }
 
       .notification-title {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         font-weight: 700;
-        flex: 1;
         display: flex;
         align-items: center;
-        gap: 10px;
-        text-transform: uppercase;
+        gap: 8px;
         letter-spacing: 0.3px;
       }
 
@@ -901,16 +948,17 @@
         background: none;
         border: none;
         color: inherit;
-        font-size: 1.3rem;
+        font-size: 1.1rem;
         cursor: pointer;
         padding: 0;
-        width: 28px;
-        height: 28px;
+        width: 22px;
+        height: 22px;
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 0.7;
         transition: opacity 0.2s;
+        margin-left: 8px;
       }
 
       .notification-close:hover {
@@ -918,22 +966,50 @@
       }
 
       .notification-body {
-        padding: 16px;
         display: none;
-        border-top: 1px solid #E8E8E8;
-        line-height: 1.7;
-        font-size: 0.9rem;
-        color: #333;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        white-space: normal;
+        line-height: 1.5;
+      }
+
+      /* 확장된 알림 스타일 */
+      .notification-item.expanded {
+        flex-direction: column;
+        align-items: flex-start;
+        white-space: normal;
+        max-width: 400px;
       }
 
       .notification-item.expanded .notification-body {
         display: block;
       }
 
+      .notification-item.expanded .notification-header {
+        width: 100%;
+      }
+
+      .notification-item.hint.expanded .notification-body {
+        border-top-color: rgba(184, 134, 11, 0.3);
+      }
+
+      .notification-item.event.expanded .notification-body {
+        border-top-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .notification-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        cursor: pointer;
+      }
+
       .notification-badge {
         background: rgba(255, 255, 255, 0.25);
-        padding: 3px 10px;
-        border-radius: 2px;
+        padding: 3px 8px;
+        border-radius: 12px;
         font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;

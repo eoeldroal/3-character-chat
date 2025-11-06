@@ -408,8 +408,9 @@ async function sendMessage(isInitial = false) {
             updateBotMessageContent(messageId, fullResponse);
 
           } else if (event.type === 'metadata') {
-            // 메타데이터 저장 (스탯 업데이트용)
+            // 메타데이터 즉시 처리 (스탯 업데이트 및 알림)
             metadata = event.content;
+            handleChatMetadata(metadata);
 
           } else if (event.type === 'done') {
             // 스트리밍 완료
@@ -426,10 +427,6 @@ async function sendMessage(isInitial = false) {
           console.error('[STREAM] 이벤트 파싱 실패:', e, eventStr);
         }
       }
-    }
-
-    if (metadata) {
-      handleChatMetadata(metadata);
     }
 
   } catch (error) {
