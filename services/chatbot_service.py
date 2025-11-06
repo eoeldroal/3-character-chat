@@ -893,6 +893,29 @@ class ChatbotService:
             if stat_changes:
                 game_state.stats.apply_changes(stat_changes)
                 print(f"[STAT] ✓ Stat changes applied: {stat_changes}")
+
+                # 마일스톤 체크 (친밀도, 스탯 조합)
+                from services.moment_manager import get_moment_manager
+                moment_mgr = get_moment_manager()
+
+                new_stats = game_state.stats.to_dict()
+
+                # 친밀도 마일스톤 체크
+                intimacy_cards = moment_mgr.check_and_create_intimacy_milestones(
+                    game_state=game_state,
+                    old_intimacy=old_stats.get('intimacy', 0),
+                    new_intimacy=new_stats.get('intimacy', 0)
+                )
+                moment_mgr.add_cards_to_game_state(game_state, intimacy_cards)
+
+                # 스탯 조합 마일스톤 체크
+                stat_combo_cards = moment_mgr.check_and_create_stat_combo_milestones(
+                    game_state=game_state,
+                    old_stats=old_stats,
+                    new_stats=new_stats
+                )
+                moment_mgr.add_cards_to_game_state(game_state, stat_combo_cards)
+
             else:
                 print(f"[STAT] No stat changes")
 

@@ -63,6 +63,17 @@
         background: #336B68;
         color: white;
       }
+      .header-btn {
+        font-size: 1.8rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        transition: transform 0.2s;
+      }
+      .header-btn:hover {
+        transform: scale(1.2);
+      }
 
       /* ========================================
           채팅 책 레이아웃
@@ -2458,6 +2469,160 @@
       }
 
       /* ============================================================================ */
+      /* 특별한 순간 모달 */
+      /* ============================================================================ */
+      .moments-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1300;
+        padding: 20px;
+      }
+
+      .moments-modal.open {
+        display: flex;
+      }
+
+      .moments-modal__content {
+        background: #ffffff;
+        border-radius: 2px;
+        width: min(700px, 95%);
+        max-height: 90vh;
+        padding: 40px;
+        box-shadow: 0 12px 50px rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow-y: auto;
+        color: #1A1A1A;
+      }
+
+      .moments-modal__close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        border: none;
+        background: transparent;
+        font-size: 1.8rem;
+        cursor: pointer;
+        color: #666;
+        transition: color 0.2s;
+      }
+
+      .moments-modal__close:hover {
+        color: #336B68;
+      }
+
+      .moments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        color: #1A1A1A;
+      }
+
+      .moments-list p {
+        color: #1A1A1A !important;
+      }
+
+      /* 이벤트 카드 (이미지 포함) */
+      .moment-card {
+        background: white;
+        border: 2px solid #E8E8E8;
+        border-radius: 8px;
+        padding: 0;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .moment-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      .moment-card-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+      }
+
+      .moment-card-content {
+        padding: 20px;
+        color: #1A1A1A;
+      }
+
+      .moment-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .moment-card-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1A1A1A !important;
+        margin: 0;
+      }
+
+      .moment-card-month {
+        font-size: 0.9rem;
+        color: #666 !important;
+        font-weight: 600;
+      }
+
+      .moment-card-description {
+        color: #555 !important;
+        line-height: 1.6;
+        margin: 0;
+      }
+
+      /* Force dark text on event cards too */
+      .moment-card:not(.milestone) .moment-card-content *,
+      .moment-card:not(.milestone) h3,
+      .moment-card:not(.milestone) p,
+      .moment-card:not(.milestone) span {
+        color: inherit !important;
+      }
+
+      /* 마일스톤 카드 (그라데이션 배경) */
+      .moment-card.milestone {
+        background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%) !important;
+        border: none !important;
+        color: #1A1A1A !important;
+      }
+
+      .moment-card.milestone .moment-card-content {
+        position: relative;
+        color: #1A1A1A !important;
+      }
+
+      .moment-card.milestone .moment-card-emoji {
+        font-size: 3rem;
+        margin-bottom: 12px;
+        animation: pulse 2s infinite;
+      }
+
+      .moment-card.milestone .moment-card-title,
+      .moment-card.milestone .moment-card-description,
+      .moment-card.milestone .moment-card-month {
+        color: #1A1A1A !important;
+      }
+
+      /* Force dark text on ALL milestone card elements */
+      .moment-card.milestone *,
+      .moment-card.milestone h3,
+      .moment-card.milestone p,
+      .moment-card.milestone span {
+        color: #1A1A1A !important;
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+      }
+
+      /* ============================================================================ */
       /* 훈련 결과 카드 애니메이션 */
       /* ============================================================================ */
       .training-result-card {
@@ -2643,13 +2808,24 @@
       </div>
     </div>
     <header class="header">
+      <div style="width: 100px;">
+        <button
+          class="header-btn"
+          onclick="openMomentsModal()"
+          title="특별한 순간"
+        >
+          ✨
+        </button>
+      </div>
       <div class="header-center">{{ bot_name }}</div>
-      <button
-        class="close-btn"
-        onclick="window.location.href='{{ url_for('index') }}'"
-      >
-        &times;
-      </button>
+      <div style="width: 100px; text-align: right;">
+        <button
+          class="close-btn"
+          onclick="window.location.href='{{ url_for('index') }}'"
+        >
+          &times;
+        </button>
+      </div>
     </header>
 
     <!-- <<< 수정 시작: 스탯 패널 전체를 최신 기획에 맞게 업데이트 >>> -->
@@ -3105,6 +3281,18 @@
         </div>
 
         <button id="training-submit" class="training-submit-btn">훈련 시작</button>
+      </div>
+    </div>
+
+    <!-- 특별한 순간 모달 -->
+    <div id="moments-modal" class="moments-modal">
+      <div class="moments-modal__content">
+        <button class="moments-modal__close" onclick="closeMomentsModal()">&times;</button>
+        <h2 style="margin-top: 0; color: #336B68;">✨ 특별한 순간</h2>
+        <p style="color: #666; margin-bottom: 20px;">강태와 함께한 소중한 기억들</p>
+        <div id="moments-list" class="moments-list">
+          <!-- JavaScript로 동적 생성 -->
+        </div>
       </div>
     </div>
 

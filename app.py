@@ -785,6 +785,53 @@ def api_complete_storybook():
         # 스토리북 완료 표시
         game_state.mark_storybook_completed(storybook_id)
 
+        # 특별한 순간 카드 생성 (5월 집 방문, 8월 대회)
+        from services.moment_manager import get_moment_manager
+        moment_mgr = get_moment_manager()
+
+        if storybook_id == "5_main_event":
+            # 5월 집 방문 이벤트 카드 생성
+            card = moment_mgr.create_event_card(
+                category='home_visit',
+                title='보이지 않는 상처',
+                description='강태의 집을 방문해 그의 과거와 깊은 상처를 알게 되었습니다.',
+                month=5,
+                image_url='./static/images/chatbot/5_month_house.png',
+                stats_snapshot=game_state.stats.to_dict()
+            )
+            moment_mgr.add_cards_to_game_state(game_state, [card])
+
+        elif storybook_id in ["8_result_homerun", "8_result_hit", "8_steal_success", "8_steal_fail"]:
+            # 8월 대회 결과 카드 생성 (결과별 다른 제목/설명)
+            tournament_result = game_state.flags.get('tournament_result', 'strikeout')
+
+            if tournament_result == 'homerun':
+                title = '기적의 역전 만루 홈런'
+                description = '9회 말 2사 만루, 강태가 끝내기 만루 홈런을 터뜨렸습니다!'
+                image_url = './static/images/chatbot/cheers1.png'
+            elif tournament_result == 'hit_steal':
+                title = '극적인 도루 성공'
+                description = '동점 적시타 후 도루에 성공하며 트라우마를 극복했습니다!'
+                image_url = './static/images/chatbot/cheers2.png'
+            elif tournament_result == 'hit':
+                title = '동점 적시타'
+                description = '9회 말 2사 만루, 강태가 동점 적시타를 쳐냈습니다!'
+                image_url = './static/images/chatbot/cheers2.png'
+            else:  # strikeout
+                title = '아쉬운 삼진'
+                description = '9회 말 마지막 타석, 아쉽게 삼진을 당했지만 강태는 성장했습니다.'
+                image_url = './static/images/chatbot/ballpark.png'
+
+            card = moment_mgr.create_event_card(
+                category='tournament',
+                title=title,
+                description=description,
+                month=8,
+                image_url=image_url,
+                stats_snapshot=game_state.stats.to_dict()
+            )
+            moment_mgr.add_cards_to_game_state(game_state, [card])
+
         # 스토리북 정보 가져오기
         storybook_manager = get_storybook_manager()
         storybook = storybook_manager.get_storybook(storybook_id)

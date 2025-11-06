@@ -2119,3 +2119,108 @@ function showEventWithOptions(eventInfo) {
 
 // 5월 이벤트 선택지 시스템 제거됨 - flags로 단순화됨
 
+// ============================================================================
+// 특별한 순간 모달
+// ============================================================================
+
+/**
+ * 특별한 순간 모달 열기
+ */
+async function openMomentsModal() {
+  const modal = document.getElementById('moments-modal');
+  if (!modal) return;
+
+  modal.classList.add('open');
+
+  // 카드 로드 및 렌더링
+  await loadAndRenderMoments();
+}
+
+/**
+ * 특별한 순간 모달 닫기
+ */
+function closeMomentsModal() {
+  const modal = document.getElementById('moments-modal');
+  if (modal) {
+    modal.classList.remove('open');
+  }
+}
+
+/**
+ * 특별한 순간 카드 로드 및 렌더링
+ */
+async function loadAndRenderMoments() {
+  try {
+    const response = await fetch(`/api/moments?username=${username}`);
+    const data = await response.json();
+
+    if (data.success) {
+      renderMomentCards(data.moments);
+    } else {
+      console.error('[MOMENTS] 로드 실패:', data.error);
+    }
+  } catch (error) {
+    console.error('[MOMENTS] 로드 오류:', error);
+  }
+}
+
+/**
+ * 특별한 순간 카드 렌더링
+ * @param {Array} moments - 카드 데이터 배열
+ */
+function renderMomentCards(moments) {
+  const list = document.getElementById('moments-list');
+  if (!list) return;
+
+  if (!moments || moments.length === 0) {
+    list.innerHTML = `
+      <div style="text-align: center; padding: 40px;">
+        <p style="color: #999; margin: 0;">아직 특별한 순간이 기록되지 않았습니다.</p>
+        <p style="color: #999; font-size: 0.9rem; margin-top: 8px;">강태와 함께 소중한 기억을 만들어보세요!</p>
+      </div>
+    `;
+    return;
+  }
+
+  // 최신순 정렬 (timestamp 기준)
+  const sortedMoments = moments.sort((a, b) =>
+    new Date(b.timestamp) - new Date(a.timestamp)
+  );
+
+  list.innerHTML = sortedMoments.map(moment => {
+    if (moment.type === 'event') {
+      // 이벤트 카드 (이미지 포함)
+      return `
+        <div class="moment-card">
+          <img src="${moment.image_url}" alt="${moment.title}" class="moment-card-image" onerror="this.style.display='none'">
+          <div class="moment-card-content" style="color: #1A1A1A;">
+            <div class="moment-card-header">
+              <h3 class="moment-card-title" style="color: #1A1A1A;">${moment.title}</h3>
+              <span class="moment-card-month" style="color: #666;">${moment.month}월</span>
+            </div>
+            <p class="moment-card-description" style="color: #555;">${moment.description}</p>
+          </div>
+        </div>
+      `;
+    } else {
+      // 마일스톤 카드 (그라데이션 배경)
+      const visual = moment.visual_data || {};
+      const gradient = visual.gradient || ['#4A90E2', '#50C878'];
+      const emoji = visual.emoji || '⭐';
+
+      return `
+        <div class="moment-card milestone" style="--gradient-start: ${gradient[0]}; --gradient-end: ${gradient[1]};">
+          <div class="moment-card-content" style="color: #1A1A1A;">
+            <div class="moment-card-emoji">${emoji}</div>
+            <div class="moment-card-header">
+              <h3 class="moment-card-title" style="color: #1A1A1A;">${moment.title}</h3>
+              <span class="moment-card-month" style="color: #1A1A1A;">${moment.month}월</span>
+            </div>
+            <p class="moment-card-description" style="color: #1A1A1A;">${moment.description}</p>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+}
+
